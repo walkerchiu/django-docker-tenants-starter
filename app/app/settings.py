@@ -19,6 +19,11 @@ from django.utils.encoding import force_str
 django.utils.encoding.force_text = force_str
 
 
+APP_DOMAIN = os.environ.get("APP_DOMAIN")
+APP_ENV = os.environ.get("APP_ENV")
+APP_NAME = os.environ.get("APP_NAME")
+
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -37,12 +42,32 @@ WSGI_APPLICATION = "app.wsgi.application"
 
 # Application definition
 
-INSTALLED_APPS = [
+# Multitenancy
+# https://django-tenants.readthedocs.io/en/latest/
+
+SHARED_APPS = (
     "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
     "django.contrib.messages",
+    "django_tenants",
+    "safedelete",
+    "tenant",
+)
+
+DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
+
+PUBLIC_SCHEMA_NAME = "public"
+
+TENANT_APPS = ("organization",)
+
+TENANT_DOMAIN_MODEL = "tenant.Domain"
+
+TENANT_MODEL = "tenant.Tenant"
+
+INSTALLED_APPS = list(SHARED_APPS) + [
+    app for app in TENANT_APPS if app not in SHARED_APPS
 ]
 
 
@@ -63,6 +88,7 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 # https://docs.djangoproject.com/en/4.0/topics/http/middleware/
 
 MIDDLEWARE = [
+    "django_tenants.middleware.main.TenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -71,6 +97,21 @@ MIDDLEWARE = [
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+
+# Database
+# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
+
+DATABASES = {
+    "default": {
+        "ENGINE": os.environ.get("SQL_ENGINE", "django.db.backends.sqlite3"),
+        "NAME": os.environ.get("SQL_DATABASE", os.path.join(BASE_DIR, "db.sqlite3")),
+        "USER": os.environ.get("SQL_USER"),
+        "PASSWORD": os.environ.get("SQL_PASSWORD"),
+        "HOST": os.environ.get("SQL_HOST", "localhost"),
+        "PORT": os.environ.get("SQL_PORT", "5432"),
+    }
+}
 
 
 # Templates
@@ -91,17 +132,6 @@ TEMPLATES = [
         },
     },
 ]
-
-
-# Database
-# https://docs.djangoproject.com/en/4.0/ref/settings/#databases
-
-DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
-    }
-}
 
 
 # Password validation
