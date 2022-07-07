@@ -37,3 +37,10 @@ class PublishableModel(models.Model):
         return self.is_published and (
             self.published_at is None or self.published_at <= datetime.date.today()
         )
+
+
+class TranslationModel(models.Model):
+    language_code = models.CharField(max_length=35, default="zh-TW")
+
+    class Meta:
+        abstract = True
