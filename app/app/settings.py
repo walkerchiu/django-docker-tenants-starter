@@ -46,7 +46,6 @@ WSGI_APPLICATION = "app.wsgi.application"
 # https://django-tenants.readthedocs.io/en/latest/
 
 SHARED_APPS = (
-    "django.contrib.admin",
     "django.contrib.auth",
     "django.contrib.contenttypes",
     "django.contrib.staticfiles",
@@ -60,7 +59,10 @@ DATABASE_ROUTERS = ("django_tenants.routers.TenantSyncRouter",)
 
 PUBLIC_SCHEMA_NAME = "public"
 
-TENANT_APPS = ("organization",)
+TENANT_APPS = (
+    "account",
+    "organization",
+)
 
 TENANT_DOMAIN_MODEL = "tenant.Domain"
 
@@ -112,6 +114,12 @@ DATABASES = {
         "PORT": os.environ.get("SQL_PORT", "5432"),
     }
 }
+
+
+# Authentication
+# https://docs.djangoproject.com/en/4.0/topics/auth/
+
+AUTH_USER_MODEL = "account.User"
 
 
 # Templates

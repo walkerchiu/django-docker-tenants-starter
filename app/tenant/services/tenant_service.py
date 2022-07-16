@@ -2,18 +2,17 @@ from typing import Tuple
 import uuid
 
 from django.conf import settings
+from django.db import transaction
 from django.db.utils import IntegrityError
 
 from safedelete.models import HARD_DELETE
 
-from organization.services.organization_service import OrganizationService
 from tenant.models import Contract, Domain, Tenant
 
 
 class TenantService:
-    def create_tenant(
-        self, organization_name: str, subdomain: str, email: str, password: str
-    ) -> Tuple[bool, Tenant]:
+    @transaction.atomic
+    def create_tenant(self, subdomain: str, email: str) -> Tuple[bool, Tenant]:
         schema_name = str(uuid.uuid4()).replace("-", "")
 
         tenant = Tenant(
@@ -38,15 +37,10 @@ class TenantService:
             )
             domain.save()
 
-            organization_service = OrganizationService()
-            result, _ = organization_service.initiate_schema(
-                schema_name=schema_name,
-                organization_name=organization_name,
-                email=email,
-                password=password,
-            )
         except IntegrityError:
             result = False
+        else:
+            result = True
 
         if not result:
             tenant.delete(force_policy=HARD_DELETE)
@@ -54,6 +48,7 @@ class TenantService:
 
         return result, tenant
 
+    @transaction.atomic
     def delete_tenant(self, tenant_id: uuid) -> bool:
         try:
             tenant = Tenant.objects.get(pk=tenant_id)
@@ -64,6 +59,7 @@ class TenantService:
 
         return True
 
+    @transaction.atomic
     def undelete_tenant(self, tenant_id: uuid) -> bool:
         try:
             tenant = Tenant.deleted_objects.get(pk=tenant_id)

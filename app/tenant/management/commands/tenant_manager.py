@@ -1,5 +1,6 @@
 from django.core.management.base import BaseCommand
 
+from organization.services.organization_service import OrganizationService
 from tenant.services.tenant_service import TenantService
 
 
@@ -50,23 +51,30 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         if options.get("c") or options.get("create"):
             if (
-                options.get("organization_name")
-                and options.get("subdomain")
+                options.get("subdomain")
+                and options.get("organization_name")
                 and options.get("email")
                 and options.get("password")
             ):
-                organization_name = options.get("organization_name")
                 subdomain = options.get("subdomain")
+                organization_name = options.get("organization_name")
                 email = options.get("email")
                 password = options.get("password")
 
                 tenant_service = TenantService()
-                result = tenant_service.create_tenant(
-                    organization_name=organization_name,
+                result, tenant = tenant_service.create_tenant(
                     subdomain=subdomain,
                     email=email,
-                    password=password,
                 )
+
+                if result:
+                    organization_service = OrganizationService()
+                    result = organization_service.initiate_schema(
+                        schema_name=tenant.schema_name,
+                        organization_name=organization_name,
+                        email=email,
+                        password=password,
+                    )
 
                 if result:
                     self.stdout.write(

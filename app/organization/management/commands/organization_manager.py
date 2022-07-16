@@ -61,7 +61,7 @@ class Command(BaseCommand):
                 password = options.get("password")
 
                 organization_service = OrganizationService()
-                result, _ = organization_service.initiate_schema(
+                result, _, _ = organization_service.initiate_schema(
                     schema_name=schema_name,
                     organization_name=organization_name,
                     email=email,

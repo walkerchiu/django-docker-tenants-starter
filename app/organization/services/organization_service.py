@@ -1,39 +1,57 @@
 from typing import Tuple
 import uuid
 
-from django_tenants.utils import schema_context
+from django.db import transaction
+from django.db.utils import ProgrammingError
 
-from organization.models import Organization
+from django_tenants.utils import schema_context
+from safedelete.models import HARD_DELETE
+
+from account.models import User
+from account.services.user_service import UserService
+from organization.models import Organization, OrganizationTrans
 
 
 class OrganizationService:
+    @transaction.atomic
     def initiate_schema(
         self, schema_name: str, organization_name: str, email: str, password: str
-    ) -> Tuple[bool, Organization]:
+    ) -> Tuple[bool, Organization, User]:
         with schema_context(schema_name):
-            result, organization = self.create_organization(
-                schema_name=schema_name,
-                organization_name=organization_name,
-            )
+            try:
+                organization = Organization(
+                    schema_name=schema_name,
+                )
+                organization.save()
+                OrganizationTrans.objects.create(
+                    organization=organization,
+                    language_code=organization.language_code,
+                    name=organization_name,
+                )
 
-        return result, organization
+                user_service = UserService()
+                result, user = user_service.create_user(
+                    schema_name=schema_name,
+                    email=email,
+                    password=password,
+                    name="demo",
+                )
 
-    def create_organization(
-        self, schema_name: str, organization_name: str
-    ) -> Tuple[bool, Organization]:
-        with schema_context(schema_name):
-            organization = Organization(
-                schema_name=schema_name,
-                name=organization_name,
-            )
-            organization.save()
+                if result:
+                    return True, organization, user
+                else:
+                    organization.delete(force_policy=HARD_DELETE)
+                    return False, None, None
+            except ProgrammingError:
+                return False, None, None
 
-        return True, organization
-
+    @transaction.atomic
     def delete_organization(self, schema_name: str, organization_id: uuid) -> bool:
         with schema_context(schema_name):
             try:
                 organization = Organization.objects.get(pk=organization_id)
+            except ProgrammingError:
+                return False
             except Organization.DoesNotExist:
                 return False
 
@@ -41,10 +59,13 @@ class OrganizationService:
 
         return True
 
+    @transaction.atomic
     def undelete_organization(self, schema_name: str, organization_id: uuid) -> bool:
         with schema_context(schema_name):
             try:
                 organization = Organization.deleted_objects.get(pk=organization_id)
+            except ProgrammingError:
+                return False
             except Organization.DoesNotExist:
                 return False
 
