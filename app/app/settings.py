@@ -10,6 +10,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.0/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import django
 import os
@@ -150,10 +151,45 @@ CORS_ALLOW_HEADERS = list(default_headers) + [
 ]
 
 
+# GraphQL
+# https://docs.graphene-python.org/en/latest/quickstart/
+# https://django-graphql-jwt.domake.io/
+
+GRAPHENE = {
+    "ATOMIC_MUTATIONS": True,
+    "SCHEMA": "django_root.schema.schema",
+    "MIDDLEWARE": [
+        "core.graphql_jwt.middleware.JSONWebTokenMiddleware",
+    ],
+}
+
+GRAPHQL_JWT = {
+    "JWT_ALLOW_ARGUMENT": True,
+    "JWT_ALLOW_REFRESH": True,
+    "JWT_PAYLOAD_HANDLER": "core.graphql_jwt.utils.jwt_payload",
+    "JWT_AUTH_HEADER_PREFIX": "Bearer",
+    "JWT_VERIFY_EXPIRATION": True,
+    "JWT_LONG_RUNNING_REFRESH_TOKEN": True,
+    "JWT_EXPIRATION_DELTA": timedelta(
+        minutes=int(os.environ["JWT_EXPIRATION_MINUTES"])
+    ),
+    "JWT_REFRESH_EXPIRATION_DELTA": timedelta(
+        days=int(os.environ["JWT_REFRESH_EXPIRATION_DAYS"])
+    ),
+    "JWT_SECRET_KEY": SECRET_KEY,
+    "JWT_ALGORITHM": "HS256",
+}
+
+
 # Authentication
 # https://docs.djangoproject.com/en/4.0/topics/auth/
 
 AUTH_USER_MODEL = "account.User"
+
+AUTHENTICATION_BACKENDS = [
+    "graphql_jwt.backends.JSONWebTokenBackend",
+    "django.contrib.auth.backends.ModelBackend",
+]
 
 
 # Templates
