@@ -21,11 +21,17 @@ from django.views.decorators.csrf import csrf_exempt
 from graphene_django.views import GraphQLView
 
 from app.schemas.schema_auth import schema as schema_auth
+from core.backend import DepthAnalysisBackend
+
 
 # GraphQL
 urlpatterns = [
     path(
         "auth/graphql",
-        csrf_exempt(GraphQLView.as_view(graphiql=True, schema=schema_auth)),
+        csrf_exempt(
+            GraphQLView.as_view(
+                graphiql=True, schema=schema_auth, backend=DepthAnalysisBackend()
+            )
+        ),
     ),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
