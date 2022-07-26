@@ -95,11 +95,12 @@ ALLOWED_HOSTS = os.environ.get("DJANGO_ALLOWED_HOSTS").split(" ")
 # https://docs.djangoproject.com/en/4.0/topics/http/middleware/
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
+    "core.middleware.HealthCheckMiddleware",
     "tenant.middleware.XTenantMiddleware",
     "django_tenants.middleware.main.TenantMainMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
