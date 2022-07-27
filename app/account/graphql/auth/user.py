@@ -14,6 +14,7 @@ from graphql_jwt.decorators import login_required
 import graphene
 
 from account.models import PasswordReset, User
+from core.relay.connection import ExtendedConnection
 from account.services.user_service import UserService
 from tenant.models import Domain, Tenant
 from tenant.services.tenant_service import TenantService
@@ -45,6 +46,7 @@ class UserNode(DjangoObjectType):
         fields = ("id", "profile", "email", "name")
         order_by_field = "email"
         interfaces = (graphene.relay.Node,)
+        connection_class = ExtendedConnection
 
     tenants = graphene.List(TenantsType)
 
